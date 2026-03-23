@@ -404,7 +404,7 @@ function insertMd(stepId, syntax) {
    STEP BUILDER
 ════════════════════════════════ */
 function addStep(type = "text", content = "") {
-  const id = Date.now() + Math.random();
+  const id = Date.now() + Math.floor(Math.random() * 1000);
   steps.push({ id, type, content, preview: false });
   renderSB();
   setTimeout(() => {
@@ -490,11 +490,11 @@ function deserializeSteps(fix) {
   const chunks = fix.split("\n---\n");
   return chunks.map((chunk, i) => {
     const m = chunk.match(/^(\d+)\.\s*\[(code|text|comment)\]\s*([\s\S]*)$/);
-    if (m) return { id: Date.now()+i+Math.random(), type: m[2], content: m[3].trim(), preview: false };
+    if (m) return { id: Date.now()*100+i, type: m[2], content: m[3].trim(), preview: false };
     // fallback plain line
     const m2 = chunk.match(/^(\d+)[\.\)]\s*([\s\S]*)$/);
-    if (m2) return { id: Date.now()+i+Math.random(), type: "text", content: m2[2].trim(), preview: false };
-    return chunk.trim() ? { id: Date.now()+i+Math.random(), type: "text", content: chunk.trim(), preview: false } : null;
+    if (m2) return { id: Date.now()*100+i+1, type: "text", content: m2[2].trim(), preview: false };
+    return chunk.trim() ? { id: Date.now()*100+i+2, type: "text", content: chunk.trim(), preview: false } : null;
   }).filter(Boolean);
 }
 
