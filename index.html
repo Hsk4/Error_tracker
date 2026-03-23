@@ -232,7 +232,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
       <div class="brand-sub">React · React Native · 6mo roadmap</div>
     </div>
   </div>
-  <button class="btn-primary" onclick="openModal()">+ Log Error</button>
+  <button class="btn-primary" id="btn-log">+ Log Error</button>
 </div>
 
 <div class="container">
@@ -274,19 +274,19 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
     <h3>Delete this error?</h3>
     <p>This will permanently remove it from Notion. This action cannot be undone.</p>
     <div class="confirm-btns">
-      <button class="btn-cancel" onclick="closeConfirm()">Cancel</button>
+      <button class="btn-cancel" id="btn-cancel-confirm">Cancel</button>
       <button class="btn-danger" id="confirm-ok">Delete</button>
     </div>
   </div>
 </div>
 
 <!-- Log / Edit Modal -->
-<div class="overlay" id="overlay" onclick="overlayClick(event)">
+<div class="overlay" id="overlay">
   <div class="modal" id="modal">
     <div class="modal-handle"></div>
     <div class="modal-head">
       <span class="modal-title" id="modal-title-txt">Log an error</span>
-      <button class="modal-x" onclick="closeModal()">✕</button>
+      <button class="modal-x" id="btn-close-modal">✕</button>
     </div>
     <div class="modal-body">
       <div class="frow">
@@ -329,9 +329,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
           <span class="sb-label">Fix — steps</span>
         </div>
         <div class="sb-list" id="sb-list"></div>
-        <button class="btn-add-step" onclick="addStep()">+ Add step</button>
+        <button class="btn-add-step" id="btn-add-step">+ Add step</button>
       </div>
-      <button class="btn-submit" id="f-submit" onclick="submitError()">
+      <button class="btn-submit" id="f-submit" id="btn-submit-error">
         <span id="f-submit-lbl">Save error</span>
       </button>
       <div style="height:1.5rem"></div>
@@ -442,27 +442,27 @@ function renderSB() {
       <div class="sb-item-head">
         <div class="sb-num">${i+1}</div>
         <div class="type-pills">
-          <button class="tp${s.type==='text'?' on':''}"    onclick="setStepType(${s.id},'text')">Text</button>
-          <button class="tp${s.type==='code'?' on':''}"    onclick="setStepType(${s.id},'code')">Code</button>
-          <button class="tp${s.type==='comment'?' on':''}" onclick="setStepType(${s.id},'comment')">Comment</button>
+          <button class="tp${s.type==='text'?' on':''}"    data-sb-action="type" data-type="text">Text</button>
+          <button class="tp${s.type==='code'?' on':''}"    data-sb-action="type" data-type="code">Code</button>
+          <button class="tp${s.type==='comment'?' on':''}" data-sb-action="type" data-type="comment">Comment</button>
         </div>
-        <button class="sb-del" onclick="removeStep(${s.id})">✕</button>
+        <button class="sb-del" data-sb-action="remove">✕</button>
       </div>
       ${showMdBar ? `
       <div class="md-toolbar">
-        <button class="md-btn" onclick="insertMd(${s.id},'# ')"    title="Heading 1">H1</button>
-        <button class="md-btn" onclick="insertMd(${s.id},'## ')"   title="Heading 2">H2</button>
-        <button class="md-btn" onclick="insertMd(${s.id},'### ')"  title="Heading 3">H3</button>
+        <button class="md-btn" data-sb-action="md" data-md="# "    title="Heading 1">H1</button>
+        <button class="md-btn" data-sb-action="md" data-md="## "   title="Heading 2">H2</button>
+        <button class="md-btn" data-sb-action="md" data-md="### "  title="Heading 3">H3</button>
         <div class="md-sep"></div>
-        <button class="md-btn" onclick="insertMd(${s.id},'**')"    title="Bold"><b>B</b></button>
-        <button class="md-btn" onclick="insertMd(${s.id},'*')"     title="Italic"><i>I</i></button>
+        <button class="md-btn" data-sb-action="md" data-md="DSTAR"    title="Bold"><b>B</b></button>
+        <button class="md-btn" data-sb-action="md" data-md="STAR"     title="Italic"><i>I</i></button>
         <div class="md-sep"></div>
-        <button class="md-btn" onclick="insertMd(${s.id},'- ')"    title="Bullet list">• List</button>
-        <button class="md-btn" onclick="insertMd(${s.id},'1. ')"   title="Numbered list">1. List</button>
+        <button class="md-btn" data-sb-action="md" data-md="- "    title="Bullet list">• List</button>
+        <button class="md-btn" data-sb-action="md" data-md="1. "   title="Numbered list">1. List</button>
         <div class="md-sep"></div>
-        <button class="md-btn" onclick="insertMd(${s.id},'`')"     title="Inline code">\`code\`</button>
-        ${isComment ? `<button class="md-btn" onclick="insertMd(${s.id},'> ')" title="Comment">&gt; note</button>` : ""}
-        <button class="md-preview-toggle${s.preview?' on':''}" onclick="togglePreview(${s.id})">${s.preview?"Edit":"Preview"}</button>
+        <button class="md-btn" data-sb-action="md" data-md="TICK"     title="Inline code">\`code\`</button>
+        ${isComment ? `<button class="md-btn" data-sb-action="md" data-md="GT" title="Comment">&gt; note</button>` : ""}
+        <button class="md-preview-toggle${s.preview?' on':''}" data-sb-action="preview">${s.preview?"Edit":"Preview"}</button>
       </div>` : ""}
       <div class="sb-editor-wrap">
         <textarea
@@ -568,8 +568,7 @@ async function apiDelete(id) {
 /* ════════════════════════════════
    CRUD ACTIONS
 ════════════════════════════════ */
-function startEdit(id, ev) {
-  ev.stopPropagation();
+function startEdit(id) {
   const e = allErrors.find(e => e.id === id);
   if (!e) return;
   editingId = id;
@@ -585,8 +584,7 @@ function startEdit(id, ev) {
   document.getElementById("overlay").classList.add("open");
 }
 
-async function toggleResolve(id, ev) {
-  ev.stopPropagation();
+async function toggleResolve(id) {
   const e = allErrors.find(e => e.id === id);
   if (!e) return;
   const newResolved = !e.resolved;
@@ -599,8 +597,7 @@ async function toggleResolve(id, ev) {
 }
 
 let pendingDeleteId = null;
-function startDelete(id, ev) {
-  ev.stopPropagation();
+function startDelete(id) {
   pendingDeleteId = id;
   document.getElementById("confirm-box").classList.add("open");
   document.getElementById("confirm-ok").onclick = confirmDelete;
@@ -619,8 +616,7 @@ async function confirmDelete() {
   } catch { toast("Delete failed.", "err"); closeConfirm(); }
 }
 
-async function duplicateError(id, ev) {
-  ev.stopPropagation();
+async function duplicateError(id) {
   const e = allErrors.find(e => e.id === id);
   if (!e) return;
   try {
@@ -717,7 +713,7 @@ function renderDisplaySteps(fix) {
           ? `<div class="step-kind">Command</div>
              <div class="codeblock">
                <pre>${escHtml(s.content)}</pre>
-               <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+               <button class="copy-btn" data-action="copy-pre">Copy</button>
              </div>`
           : s.type==="comment"
             ? `<div class="md-render">${renderMd("> "+s.content)}</div>`
@@ -761,21 +757,22 @@ function renderList() {
   }
 
   el.innerHTML = list.map((e,i) => `
-    <div class="error-card${e.resolved?' resolved':''}">
-      <div class="card-head" onclick="toggle(${i})">
+    <div class="error-card${e.resolved?' resolved':''}" data-id="${e.id}" data-idx="${i}">
+      <div class="card-head" data-action="toggle" data-idx="${i}">
         <span class="badge ${catCls(e.category)}">${e.category}</span>
         <span class="badge ${diffCls(e.difficulty)}">${e.difficulty}</span>
-        ${e.resolved ? `<span class="badge b-done">Resolved</span>` : ""}
-        ${e.errorCode ? `<span class="err-pill">${escHtml(e.errorCode)}</span>` : ""}
+        ${e.resolved ? '<span class="badge b-done">Resolved</span>' : ""}
+        ${e.errorCode ? '<span class="err-pill">'+escHtml(e.errorCode)+'</span>' : ""}
         <span class="card-title${e.resolved?' resolved-title':''}">${escHtml(e.title)}</span>
         <span class="card-date">${fmtDate(e.date)}</span>
-        <div class="card-actions" onclick="event.stopPropagation()">
-          <button class="act-btn ${e.resolved?'unresolve':'resolve'}" onclick="toggleResolve('${e.id}',event)" title="${e.resolved?'Unresolve':'Mark resolved'}">
-            ${e.resolved?"↩ Unresolve":"✓ Resolve"}
+        <div class="card-actions">
+          <button class="act-btn ${e.resolved?'unresolve':'resolve'}"
+            data-action="resolve" data-id="${e.id}">
+            ${e.resolved ? "↩ Unresolve" : "✓ Resolve"}
           </button>
-          <button class="act-btn" onclick="startEdit('${e.id}',event)" title="Edit">Edit</button>
-          <button class="act-btn" onclick="duplicateError('${e.id}',event)" title="Duplicate">Copy</button>
-          <button class="act-btn del" onclick="startDelete('${e.id}',event)" title="Delete">Del</button>
+          <button class="act-btn" data-action="edit" data-id="${e.id}">Edit</button>
+          <button class="act-btn" data-action="duplicate" data-id="${e.id}">Copy</button>
+          <button class="act-btn del" data-action="delete" data-id="${e.id}">Del</button>
         </div>
         <div class="chevron" id="chev-${i}">▶</div>
       </div>
@@ -786,7 +783,7 @@ function renderList() {
           <div class="sec-lbl">Error output</div>
           <div class="codeblock">
             <pre>${escHtml(e.description)}</pre>
-            <button class="copy-btn" onclick="copyPre(this)">Copy</button>
+            <button class="copy-btn" data-action="copy-pre">Copy</button>
           </div>
         </div>` : ""}
         ${e.fix ? `
@@ -796,20 +793,44 @@ function renderList() {
         </div>` : ""}
       </div>
     </div>`).join("");
+
+  attachListDelegation();
 }
 
-function toggle(i) {
-  document.getElementById(`body-${i}`).classList.toggle("open");
-  document.getElementById(`chev-${i}`).classList.toggle("open");
+function attachListDelegation() {
+  const el = document.getElementById("error-list");
+  el.removeEventListener("click", listClickHandler);
+  el.addEventListener("click", listClickHandler);
 }
 
-function copyPre(btn) {
-  const pre = btn.previousElementSibling;
-  navigator.clipboard.writeText(pre.textContent).then(() => {
-    btn.textContent = "Copied!"; btn.classList.add("copied");
-    setTimeout(()=>{ btn.textContent="Copy"; btn.classList.remove("copied"); }, 2000);
-  });
+function listClickHandler(ev) {
+  const btn     = ev.target.closest("[data-action]");
+  if (!btn) return;
+  const action  = btn.dataset.action;
+  const id      = btn.dataset.id;
+  const idx     = parseInt(btn.dataset.idx ?? btn.closest("[data-idx]")?.dataset.idx ?? "-1");
+
+  if (action === "toggle") {
+    const realIdx = parseInt(btn.dataset.idx);
+    document.getElementById("body-"+realIdx)?.classList.toggle("open");
+    document.getElementById("chev-"+realIdx)?.classList.toggle("open");
+    return;
+  }
+  ev.stopPropagation();
+  if (action === "resolve")   toggleResolve(id);
+  if (action === "edit")      startEdit(id);
+  if (action === "duplicate") duplicateError(id);
+  if (action === "delete")    startDelete(id);
+  if (action === "copy-pre") {
+    const pre = btn.previousElementSibling;
+    navigator.clipboard.writeText(pre.textContent).then(() => {
+      btn.textContent = "Copied!"; btn.classList.add("copied");
+      setTimeout(()=>{ btn.textContent="Copy"; btn.classList.remove("copied"); }, 2000);
+    });
+  }
 }
+
+
 
 /* ════════════════════════════════
    MODAL
@@ -848,6 +869,40 @@ function toast(msg, type="") {
 const escHtml = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
 loadErrors();
+
+  /* ── Static element wiring ── */
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("btn-log")?.addEventListener("click", openModal);
+    document.getElementById("btn-cancel-confirm")?.addEventListener("click", closeConfirm);
+    document.getElementById("btn-close-modal")?.addEventListener("click", closeModal);
+    document.getElementById("overlay")?.addEventListener("click", e => { if (e.target.id==="overlay") closeModal(); });
+    document.getElementById("btn-add-step")?.addEventListener("click", () => addStep());
+    document.getElementById("btn-submit-error")?.addEventListener("click", submitError);
+    document.getElementById("modal")?.addEventListener("click", sbClickHandler);
+    attachListDelegation();
+  });
+
+  function sbClickHandler(ev) {
+    const btn = ev.target.closest("[data-sb-action]");
+    if (!btn) return;
+    ev.stopPropagation();
+    const action = btn.dataset.sbAction;
+    const item   = btn.closest(".sb-item");
+    if (!item) return;
+    const idx = [...document.querySelectorAll(".sb-item")].indexOf(item);
+    if (idx < 0 || !steps[idx]) return;
+    const sid = steps[idx].id;
+    if (action === "type")    setStepType(sid, btn.dataset.type);
+    if (action === "remove")  removeStep(sid);
+    if (action === "preview") togglePreview(sid);
+    if (action === "md") {
+      const raw = (btn.dataset.md||"")
+        .replace("DSTAR","**").replace("STAR","*")
+        .replace("TICK","`").replace("GT","> ");
+      insertMd(sid, raw);
+    }
+  }
+
 </script>
 </body>
 </html>
