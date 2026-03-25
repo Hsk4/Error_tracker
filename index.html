@@ -331,7 +331,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
         <div class="sb-list" id="sb-list"></div>
         <button class="btn-add-step" id="btn-add-step">+ Add step</button>
       </div>
-      <button class="btn-submit" id="f-submit" id="btn-submit-error">
+      <button class="btn-submit" id="btn-submit-error">
         <span id="f-submit-lbl">Save error</span>
       </button>
       <div style="height:1.5rem"></div>
@@ -548,22 +548,33 @@ async function apiPost(payload) {
     body: JSON.stringify(payload),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data?.message || data?.error || res.status);
+  if (!res.ok) {
+    console.error("POST failed:", data);
+    throw new Error(data?.message || data?.error || res.status);
+  }
   return data;
 }
 
 async function apiPatch(id, payload) {
-  const res = await fetch(`${WORKER_URL}/errors/${id}`, {
+  const res  = await fetch(`${WORKER_URL}/errors/${id}`, {
     method:"PATCH", headers:{"Content-Type":"application/json"},
     body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error(res.status);
-  return res.json();
+  const data = await res.json();
+  if (!res.ok) {
+    console.error("PATCH failed:", data);
+    throw new Error(data?.message || data?.error || res.status);
+  }
+  return data;
 }
 
 async function apiDelete(id) {
-  const res = await fetch(`${WORKER_URL}/errors/${id}`, { method:"DELETE" });
-  if (!res.ok) throw new Error(res.status);
+  const res  = await fetch(`${WORKER_URL}/errors/${id}`, { method:"DELETE" });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    console.error("DELETE failed:", data);
+    throw new Error(data?.message || data?.error || res.status);
+  }
 }
 
 /* ════════════════════════════════
@@ -644,7 +655,7 @@ async function submitError() {
   if (!desc)  { toast("Error message is required.", "err"); return; }
   if (!fix)   { toast("Add at least one fix step.", "err"); return; }
 
-  const btn = document.getElementById("f-submit");
+  const btn = document.getElementById("btn-submit-error");
   const lbl = document.getElementById("f-submit-lbl");
   btn.disabled = true; lbl.textContent = editingId ? "Saving…" : "Logging…";
 
@@ -869,19 +880,27 @@ function toast(msg, type="") {
 }
 const escHtml = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
-loadErrors();
-
-  /* ── Static element wiring ── */
-  document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("btn-log")?.addEventListener("click", openModal);
-    document.getElementById("btn-cancel-confirm")?.addEventListener("click", closeConfirm);
-    document.getElementById("btn-close-modal")?.addEventListener("click", closeModal);
-    document.getElementById("overlay")?.addEventListener("click", e => { if (e.target.id==="overlay") closeModal(); });
-    document.getElementById("btn-add-step")?.addEventListener("click", () => addStep());
-    document.getElementById("btn-submit-error")?.addEventListener("click", submitError);
+function init() {
+    // Wire all static buttons — safe to call at any point after DOM is ready
+    document.getElementById("btn-log")           ?.addEventListener("click", openModal);
+    document.getElementById("btn-cancel-confirm") ?.addEventListener("click", closeConfirm);
+    document.getElementById("btn-close-modal")   ?.addEventListener("click", closeModal);
+    document.getElementById("btn-add-step")      ?.addEventListener("click", () => addStep());
+    document.getElementById("btn-submit-error")  ?.addEventListener("click", submitError);
+    document.getElementById("overlay")?.addEventListener("click", e => {
+      if (e.target.id === "overlay") closeModal();
+    });
     document.getElementById("modal")?.addEventListener("click", sbClickHandler);
     attachListDelegation();
-  });
+    loadErrors();
+  }
+
+  // Script is at bottom of <body> so DOM is already parsed — call init() directly
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 
   function sbClickHandler(ev) {
     const btn = ev.target.closest("[data-sb-action]");
